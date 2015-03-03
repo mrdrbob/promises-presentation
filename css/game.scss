@@ -1,0 +1,48 @@
+$tile-initial-width: 16px;
+$tile-initial-height: 16px;
+$map-columns: 20;
+$map-rows: 12;
+
+$tile-set-width: 384px;
+$tile-set-height: 160px;
+
+$bg-color: #91b09a;
+
+
+$tile-width: $tile-initial-width;
+$tile-height: $tile-initial-height;
+$map-width: $tile-width * $map-columns;
+$map-height: $tile-height * $map-rows;
+
+#game-map, #game-map2, #game-map3 {
+	position: relative;
+
+	width: $map-width;
+	height: $map-height;
+
+	border: 2px solid #000;
+	background-color: $bg-color;
+	transform: scale(3, 3);
+}
+
+#game-bg, #game-bg2, #game-bg3 {
+	width: $map-width;
+	height: $map-height;
+}
+
+.game-tile {
+	width: $tile-width;
+	height: $tile-height;
+
+	background-image: url(../assets/sheet.png);
+	background-size: ($tile-set-width) ($tile-set-height);
+
+	position: absolute;
+	left: -$tile-width;
+	right: -$tile-height;
+}
+/*
+.hero-sprite {
+	transition: opacity 0.1s, top 0.1s, left 0.1s;
+}
+*/

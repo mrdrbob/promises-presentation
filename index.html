@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Asyncronous Programing</title>
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- The Game -->
+		<link rel="stylesheet" href="css/game.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<section>
+						<h1>Taming<br /> Asynchronicity</h1>
+						<p><small>with Promises</small></p>
+					</section>
+					<section>
+						<h2>Introductions</h2>
+						<p><small>(shameless self promotion)</small></p>
+						<ul>
+							<li>Bob Davidson</li>
+							<li>Web Developer at Blend Interactive</li>
+							<li>github.com/mrdrbob</li>
+							<li><small>plus.google.com/+BobDavidsonHasAWonderfullyShortGooglePlusUrl</small></li>
+						</ul>
+					</section>
+					<section>
+						<h2>What I <em>promise</em>&nbsp; to cover:</h2>
+						<ul>
+							<li class="fragment">No more lame promise puns</li>
+							<li class="fragment">What is asynchronous?</li>
+							<li class="fragment">What is a Promise?</li>
+							<li class="fragment">Why is this talk secretly about functional programing?</li>
+						</ul>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h1>The Groundwork</h1>
+						<ul>
+							<li class="fragment">What is Synchronous vs. Asynchronous?</li>
+							<li class="fragment">Isn't Asynchronous basically the same thing as Multithreaded?</li>
+							<li class="fragment">(spoiler: it's not)</li>
+						</ul>
+					</section>
+					<section id="the-game">
+						<div id="game-map" class="scale">
+						</div>
+					</section>
+					<section>
+						<h2>(A)Sync Bottom Line:</h2>
+						<ul>
+							<li class="fragment">Synchronous: Easier / less efficient</li>
+							<li class="fragment">Asynchronous: Harder (slightly) / more effecient</li>
+						</ul>
+					</section>
+					<section id="the-game2">
+						<div id="game-map2" class="scale">
+						</div>
+					</section>
+					<section id="the-game3">
+						<div id="game-map3" class="scale">
+						</div>
+					</section>
+					<section>
+						<blockquote class="twitter-tweet" lang="en"><p>Apparently, a sufficient number of puppies can explain any computer science concept. Here we have multithreading: <a href="http://t.co/R08OZ08a7k">pic.twitter.com/R08OZ08a7k</a></p>&mdash; David Whittaker (@rundavidrun) <a href="https://twitter.com/rundavidrun/status/543480950739308544">December 12, 2014</a></blockquote>
+						<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+					</section>
+					<section>
+						<h2>Bottom Line:</h2>
+						<ul>
+							<li class="fragment">Single-threaded: 1 worker, simple</li>
+							<li class="fragment">Multi-threaded: Many workers, much overhead, easy to get wrong</li>
+							<li class="fragment">Single-threaded async - Good for when you're spending a lot of time waiting on external resources <small>(but not actually doing a lot of work)</small></li>
+							<li class="fragment">Multi-threaded - Good for intensive processes without a lot of shared resources</li>
+						</ul>
+					</section>
+					<section>
+						<h2>In Review</h2>
+						<ul>
+							<li class="fragment">Async &ne; Multithreaded</li>
+							<li class="fragment">Single thread, Sync = Lowest efficiency, lowest complexity</li>
+							<li class="fragment">Single thread, Async = Better efficiency, reasonable complexity</li>
+							<li class="fragment">Multithreaded, Sync/Async = Good efficiency, high complexity</li>
+						</ul>
+					</section>
+					<section>
+						<h2>Javascript is:</h2>
+						<p>Single-threaded, asynchronous</p>
+						<p class="fragment"><small>(mostly)</small></p>
+					</section>
+				</section>
+				<section>
+					<section>
+							<h1>Async Patterns</h1>
+					</section>
+					<section>
+							<h2>jQuery Async Style</h2>
+							<pre><code data-trim class="js">
+$.ajax({
+  url: '/api/get/stuff',
+  success: function (data) {
+    console.log('IT WORKED');
+    console.log(data);
+  },
+  error: function(req) {
+    console.log('FAIL');
+  }
+});
+						</code></pre>
+					</section>
+					<section>
+						<h2>Node Async Style</h2>
+						<pre><code data-trim class="js">
+$.ajax('/api/get/stuff', function(err, data) {
+  if (err) {
+    console.log('FAIL');
+  } else {
+    console.log('IT WORKED');
+    console.log(data);
+  }
+});
+						</code></pre>
+					</section>
+					<section>
+						<h2>Comparison</h2>
+						<pre><code data-trim class="js">
+/* jQuery - Two (or more) callbacks passed as part of parameters object */
+action({
+	various: '...',
+	parameters: '...',
+	success: successFunction,
+	error: failureFunction,
+	other: otherFunction
+});
+
+/* NodeJS - Single callback as last argument */
+action(various, paramters, function(err, result) {
+	/* If err != null, there was an error */
+});
+						</code></pre>
+					</section>
+					<section>
+						<h2>For our purposes: NodeJS style</h2>
+						<p><small>And let's write a CSS animation library!</small></p>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Goal: CSS animation library</h2>
+						<ul>
+							<li>Functional in nature</li>
+							<li>No jQuery, pure DOM</li>
+							<li>Use CSS transitions for animation</li>
+							<li>Only animate one property at a time (for simplicity)</li>
+							<li>Ignore CSS transition events (setTimeout is close enough)</li>
+							<li>Chainable calls (eventually)</li>
+							<li>Use NodeJS style callbacks (at first)</li>
+							<li>Migrate to Promises (after the Node thing doesn't work out)</li>
+						</ul>
+					</section>
+					<section>
+						<h2>The Fade Function:</h2>
+						<pre><code data-trim class="js">
+function fadeTo(objToFade, opacity, timeToTake, callback) {
+  try {
+    objToFade.style.transition = 'opacity ' + opacity + ' ' + timeToTake + 's';
+    objToFade.style.opacity = opacity;
+  } catch (err) {
+    callback(err);
+    return;
+  }
+  setTimeout(function() {
+    callback(null, objToFade);
+  }, timeToTake * 1000);
+}
+						</code></pre>
+					</section>
+					<section>
+						<h2>The Move To Function:</h2>
+						<pre><code data-trim class="js">
+function moveTo(objToMove, x, y, timeToTake, callback) {
+  try {
+    objToFade.style.transition = 'left ' + timeToTake + 's, right ' + timeToTake + 's';
+    objToFade.style.left = x + 'px';
+    objToFade.style.top = y + 'px';
+  } catch (err) {
+    callback(err);
+    return;
+  }
+  setTimeout(function() {
+    callback(null, objToMove);
+  }, timeToTake * 1000);
+}
+						</code></pre>
+				</section>
+
+				<section>
+						<h2>The Delay Function:</h2>
+						<pre><code data-trim class="js">
+function delay(objToPassthrough, timeToTake, callback) {
+  setTimeout(function() {
+    callback(null, objToPassthrough);
+  }, timeToTake * 1000);
+}
+						</code></pre>
+				</section>
+					<section>
+						<h2>Some small optimization:</h2>
+						<pre><code data-trim class="js">
+function delay(obj, time, callback) {
+  setTimeout(function() {
+    callback(null, obj);
+  }, time * 1000);
+}
+
+function fadeTo(obj, opacity, time, callback) {
+  try {
+    obj.style.transition = 'opacity ' + opacity + ' ' + time + 's';
+    obj.style.opacity = opacity;
+  } catch (err) {
+    callback(err);
+    return;
+  }
+  delay(obj, time, callback);
+}
+
+function moveTo(obj, x, y opacity, time, callback) {
+  try {
+    obj.style.transition = 'left ' + time + 's, right ' + time + 's';
+    obj.style.left = x + 'px';
+    obj.style.top = y + 'px';
+  } catch (err) {
+    callback(err);
+    return;
+  }
+  delay(obj, time, callback);
+}
+						</code></pre>
+					</section>
+				<section>
+						<h2>The Pattern</h2>
+						<ul>
+							<li>Accepts: <code>obj</code>, <code>time</code>, <code>callback</code></li>
+							<li>Returns: <code>obj</code></li>
+						</ul>
+				</section>
+				</section>
+				<section>
+				<section>
+						<h1>Let's Animate!</h1>
+				</section>
+					<section>
+						<h2>Our hero appears, approaches, pauses, then flees</h2>
+						<pre><code data-trim class="js">
+var hero = document.getElementById('hero');
+hero.style.opacity = 0;
+
+// Appears..
+fadeTo(hero, 1, 1, function (err, obj) {
+  if (err) {
+    alert(err);
+    return;
+  }
+  // Approaches...
+  moveTo(obj, treasureX, treasureY, 2, function (err2, obj2) {
+    if (err2) {
+      alert(err2);
+      return;
+    }
+
+    // Pauses...
+    delay(obj2, 2, function (err3, obj3) {
+      if (err3) {
+        alert(err3);
+        return;
+      }
+
+      // Flees...
+      moveTo(obj3, safetyX, safetyY, 0.3, function(err4, obj4) {
+        if (err4) {
+          alert(err4);
+          return;
+        }
+
+        alert('Animation Done!');
+      });
+    });
+  });
+});
+						</code></pre>
+					</section>
+					<section>
+						<h2>The problem:</h2>
+						<ul>
+							<li>Nesting hell</li>
+							<li>Repeating Ourselves (error checks, parameter passing)</li>
+						</ul>
+						</section>
+				</section>
+
+				<section>
+					<section>
+						<img src="http://i.imgur.com/ZBGZ64f.gif" alt="" class="stretch" />
+					</section>
+					<section>
+						<h1>There's got to be a better way!</h1>
+				</section>
+					<section>
+						<h2>What is a Promise?</h2>
+						<ul>
+							<li class="fragment">It's an object</li>
+							<li class="fragment">It's returned by an asynchronous function immediately</li>
+							<li class="fragment">It has a specific interface (then, done, catch, finally)</li>
+							<li class="fragment">It takes care of the plumbing.</li>
+							<li class="fragment">It's backed by a powerful library (<a href="https://github.com/medikoo/deferred">deferred</a>).</li>
+						</ul>
+				</section>
+					<section>
+						<h2>Consuming a Promise:</h2>
+						<pre><code data-trim class="js">
+var delayPromise = delay(hero, 1);
+
+delayPromise.then(function (obj) {
+  console.log('Delay success!');
+}, function (err) {
+  console.log('ERROR!');
+  console.log(err);
+});
+						</code></pre>
+				</section>
+					<section>
+						<h2>Creating a promise</h2>
+						<pre><code data-trim class="js">
+function delay(obj, time) {
+  var def = deferred();
+
+  setTimeout(function() {
+    def.resolve(obj);
+
+    // Note: Could also reject the promise if an error occurred:
+    // def.reject(new Error('Something bad happened!'));
+  }, time * 1000);
+
+
+  return def.promise;
+}
+					</code></pre>
+				</section>
+					<section>
+						<h2>Together:</h2>
+						<pre><code data-trim class="js">
+function delay(obj, time) {
+  var def = deferred();
+  
+  setTimeout(function() {
+    def.resolve(obj);
+  }, time * 1000);
+
+  return def.promise;
+}
+
+delay(hero, 1)
+  .then(function (obj) {
+    console.log('Delay success!');
+  }, function (err) {
+    console.log('ERROR!');
+    console.log(err);
+  });
+						</code></pre>
+					</section>
+				<section>
+						<h2>More things about Promises:</h2>
+					<ul>
+							<li><code>then</code> takes a success callback and an optional fail callback</li>
+							<li>Promises can be chained</li>
+							<li><code>then</code> always returns a promise.  <code>then</code> will resolve any promise returned in the callback.</li>
+							<li>Errors are passed down the chain until a fail callback is found</li>
+							<li>If there is no fail callback, errors may be silently ignored</li>
+							<li>Promises give asynchronous functions a common interface</li>
+					</ul>
+				</section>
+					<section>
+						<h2><code>then</code> takes two callbacks.</h2>
+						<pre><code data-trim class="js">
+var getCurrentSession = function() { /* returns a promise */ };
+getCurrentSession()
+  .then(function (session) {
+    /* Successful!  Do something with session! */
+  }, function (err) {
+    /* Fail!  Log the error. */
+  });
+						</code></pre>
+					</section>
+					<section>
+						<h2>Or just one.</h2>
+						<pre><code data-trim class="js">
+var getCurrentSession = function() { /* returns a promise */ };
+getCurrentSession()
+  .then(function (session) {
+    /* Successful!  Do something with session! */
+  });
+
+ /* If it fails... nothing happens. */
+						</code></pre>
+					</section>
+					<section>
+						<h2><code>then</code> is chainable.</h2>
+						<pre><code data-trim class="js">
+var validateSession = function() { /* returns a promise */ };
+var fadeInLogo = function() { /* returns a promise */ };
+var rotateEntirePage = function() { /* returns a promise */ };
+
+var promise1 = validateSession();
+var promise2 = promise1.then(fadeInLogo);
+var promise3 = promise2.then(rotateEntirePage);
+promise3.then(function() {
+  alert('Welcome to my site!');
+});
+						</code></pre>
+					</section>
+				<section>
+						<h2>Or more simply.</h2>
+						<pre><code data-trim class="js">
+var validateSession = function() { /* returns a promise */ };
+var fadeInLogo = function() { /* returns a promise */ };
+var rotateEntirePage = function() { /* returns a promise */ };
+
+validateSession()
+  .then(fadeInLogo)
+  .then(rotateEntirePage)
+  .then(function() {
+    alert('Welcome to my site!');
+  });
+						</code></pre>
+					</section>
+					<section>
+						<h2>Callbacks may return a value or a promise</h2>
+						<p>And the resolved value is passed to the next action in the chain</p>
+						<pre><code data-trim class="js">
+var clearLogin = function() { /* returns a promise */ };
+var attemptLogin = function(credentials) { /* returns a promise */ };
+var fadeInErrorMessage = function(err) { /* returns a promise */ };
+
+clearLogin()
+  .then(function() {
+    return {
+      username: document.getElementById('username').value,
+      password: document.getElementById('password').value
+    };
+  })
+  .then(attemptLogin)
+  .then(function (session) {
+    console.log('Logged in: ' + session);
+  }, function (err) {
+    return fadeInErrorMessage(err);
+  });
+						</code></pre>
+					</section>
+					<section>
+						<h2>Errors are passed down the chain</h2>
+						<p><small>Or ignored if there is no handler anywhere</small></p>
+						<pre><code data-trim class="js">
+var clearLogin = function() { /* returns a promise */ };
+var attemptLogin = function() { /* returns a promise */ };
+var hideLoginForm = function() { /* returns a promise */ };
+
+clearLogin()
+  .then(attemptLogin)
+  .then(hideLoginForm)
+  .then(function (session) {
+    console.log('Logged in: ' + session);
+  }, function (err) {
+    /* Handles any error from clearLogin, attemptLogin, or hideLoginForm */
+  });
+						</code></pre>
+				</section>
+					<section>
+						<h2><code>done</code> will rethrow errors in the chain</h2>
+						<pre><code data-trim class="js">
+var clearLogin = function() { /* returns a promise */ };
+var attemptLogin = function() { /* returns a promise */ };
+var hideLoginForm = function() { /* returns a promise */ };
+
+clearLogin()
+  .then(attemptLogin)
+  .then(hideLoginForm)
+  .then(function (session) {
+    console.log('Logged in: ' + session);
+  })
+  .done(); /* will throw an error if an error occurs in clearLogin, attemptLogin, or hideLoginForm */
+						</code></pre>
+					</section>
+					<section>
+						<h2>Promises are a common interface to different types of asynchronicity</h2>
+						<pre><code data-trim class="js">
+var makeWebRequest = function() { /* returns a promise */ };
+var waitForUserInput = function() { /* returns a promise */ };
+var animateSomething = function() { /* returns a promise */ };
+
+makeWebRequest()
+	.then(waitForUserInput)
+	.then(animateSomething);
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h1>Let's Rewrite</h1>
+					</section>
+					<section>
+						<h2>Our rewritten delay function</h2>
+						<pre><code data-trim class="js">
+function delay(obj, time) {
+  var def = deferred();
+  
+  setTimeout(function() {
+    def.resolve(obj);
+  }, time * 1000);
+
+  return def.promise;
+}
+						</code></pre>
+					</section>
+					<section>
+						<h2>Rewrite Fade To</h2>
+						<pre><code data-trim class="js">
+function fadeTo(obj, opacity, time, callback) {
+  var def = deferred();
+
+  try {
+    obj.style.transition = 'opacity ' + opacity + ' ' + time + 's';
+    obj.style.opacity = opacity;
+  } catch (err) {
+    def.reject(err);
+    return;
+  }
+
+  delay(obj, time).then(function (innerObj) {
+    def.resolve(innerObj);
+  }, function (err) {
+    def.reject(err);
+  });
+
+  return def.promise;
+}
+						</code></pre>
+					</section>
+					<section>
+						<h2>Rewrite Fade To (use the delay promise)</h2>
+						<pre><code data-trim class="js">
+function fadeTo(obj, opacity, time) {
+  try {
+    obj.style.transition = 'opacity ' + opacity + ' ' + time + 's';
+    obj.style.opacity = opacity;
+  } catch (err) {
+    return deferred.reject(err);
+  }
+
+  return delay(obj, time);
+}
+						</code></pre>
+					</section>
+					<section>
+						<h2>Rewrite Move To</h2>
+						<pre><code data-trim class="js">
+function moveTo(obj, x, y opacity, time) {
+  try {
+    obj.style.transition = 'left ' + time + 's, right ' + time + 's';
+    obj.style.left = x + 'px';
+    obj.style.top = y + 'px';
+  } catch (err) {
+    return deferred.reject(err);
+  }
+  
+  return delay(obj, time,);
+}
+						</code></pre>
+					</section>
+					<section>
+						<h2>Add a new Wait for Input delay</h2>
+						<pre><code data-trim class="js">
+function waitForIt(keyCode, obj) {
+  var def = deferred();
+
+  function onKeyUp(evt) {
+    if (evt.keyCode == keyCode) {
+      window.removeEventListener('keyup', onKeyUp);
+      def.resolve(obj);
+    };
+  }
+
+  window.addEventListener('keyup', onKeyUp);
+
+  return def.promise;
+}
+						</code></pre>
+					</section>
+					<section>
+						<h2>Our hero appears, approaches, pauses, then flees</h2>
+						<pre><code data-trim class="js">
+var hero = document.getElementById('hero');
+hero.style.opacity = 0;
+
+// Appears..
+fadeTo(hero, 1, 1)
+  // Approaches...
+  .then(function(obj1) {
+    return moveTo(obj1, treasureX, treasureY, 2);
+  })
+  // Pauses...
+  .then(function(obj2) {
+    return delay(obj2, 2);
+  })
+  // Flees...
+  .then(function(obj3) {
+    moveTo(obj3, safetyX, safetyY, 0.3);
+  })
+  // All done (or error)
+  .then(function (obj4) {
+    alert('Animation Done!');
+  }, function (err) {
+    alert(err);
+  });
+						</code></pre>
+					</section>
+					<section>
+						<h2>A New Pattern Emerges:</h2>
+						<pre><code data-trim class="js">
+promiseChain.then(function (passthrough) {
+  return animationFunction(passthrough, other, arguments);
+});
+						</code></pre>
+					</section>
+					<section>
+						<h2>Partial Application:</h2>
+						<p><small>(Sometimes incorrectly called currying)</small></p>
+						<pre><code data-trim class="js">
+var divide = function(x, y) { return x / y; };
+var invert = function(y) { return divide(1, y); }
+var result = invert(2);
+console.log(result); // Prints '0.5'
+
+/* The same as: */
+var divide = function(x, y) { return x / y; };
+var invert = partially_apply_function(divide, 1);
+var result = invert(2);
+console.log(result); // Prints '0.5'
+						</code></pre>
+					</section>
+					<section>
+						<h2>What if we partially applied our move functions?</h2>
+						<pre><code data-trim class="js">
+var hero = document.getElementById('hero');
+hero.style.opacity = 0;
+
+var fadeHero = partially_apply_function(fadeTo, hero);
+var moveHero = partially_apply_function(moveTo, hero);
+
+// Appears..
+fadeHero(1, 1)
+  // Approaches...
+  .then(function(obj1) {
+    return moveHero(treasureX, treasureY, 2);
+  })
+  // Pauses...
+  .then(function(obj2) {
+    return delay(null, 2);
+  })
+  // Flees...
+  .then(function(obj3) {
+    moveHero(safetyX, safetyY, 0.3);
+  })
+  // All done (or error)
+  .then(function (obj4) {
+    alert('Animation Done!');
+  }, function (err) {
+    alert(err);
+  });
+						</code></pre>
+					</section>
+				<section>
+						<h2>That didn't help much.</h2>
+						<p><small>Remember that every animation function returns the object being animated to the next step.</small></p>
+						<p><small>Would it be possible to rewrite our calls so that they accept just the hero and no other arguments?</small></p>
+						<p><small>Let's move obj to the last argument.</small></p>
+						<pre><code data-trim class="js">
+var fadeTo = function(opacity, time, obj) { .... };
+var moveTo = function(x, y, time, obj) { .... };
+var delay = function(time, obj) { .... };
+					</code></pre>
+				</section>
+					<section>
+						<h2>Now we partially apply the <br />first arguments</h2>
+						<pre><code data-trim class="js">
+var hero = document.getElementById('hero');
+hero.style.opacity = 0;
+
+// Appears..
+fadeTo(hero, 1, 1)
+  // Approaches...
+  .then(partially_apply_function(moveTo, treasureX, treasureY, 2))
+  // Pauses...
+  .then(partially_apply_function(delay, 2))
+  // Flees...
+  .then(partially_apply_function(moveTo, safetyX, safetyY, 0.3))
+  // All done (or error)
+  .then(function () {
+    alert('Animation Done!');
+  }, function (err) {
+    alert(err);
+  });
+						</code></pre>
+					</section>
+					<section>
+						<h2>Let's rewrite with this scenario in mind:</h2>
+						<pre><code data-trim class="js">
+function delay(time) {
+  return function (obj) {
+    var def = deferred();
+    
+    setTimeout(function() {
+      def.resolve(obj);
+    }, time * 1000);
+  
+    return def.promise;
+  }
+}
+
+function fadeTo(opacity, time) {
+  return function (obj) {
+    obj.style.transition = 'opacity ' + opacity + ' ' + time + 's';
+    obj.style.opacity = opacity;
+
+    return delay(time)(obj);
+  }
+}
+function moveTo(x, y opacity, time) {
+  return function(obj) {
+    obj.style.transition = 'left ' + time + 's, right ' + time + 's';
+    obj.style.left = x + 'px';
+    obj.style.top = y + 'px';
+    
+    return delay(time)(obj);
+  };
+}
+
+function animate(obj) {
+  return deferred(obj);
+}
+						</code></pre>
+					</section>
+					<section>
+						<h2>Now with the new functions</h2>
+						<pre><code data-trim class="js">
+var hero = document.getElementById('hero');
+hero.style.opacity = 0;
+
+animate(hero)
+  .then(fadeTo(1, 1)) // Appears..
+  .then(moveTo(treasureX, treasureY, 2)) // Approaches...
+  .then(delay(2)) // Pauses...
+  .then(moveTo(safetyX, safetyY, 0.3)) // Flees...
+
+  // All done (or error)
+  .then(function () {
+    alert('Animation Done!');
+  }, function (err) {
+    alert(err);
+  });
+						</code></pre>
+					</section>
+					<section>
+						<h2>A Real Example</h2>
+						<pre><code data-trim class="js">
+animate(hero1)
+  .then(waitForIt)
+  .then(fadeTo(1, 1))
+  .then(waitForIt)
+
+  .then(function() {
+    return deferred(
+      animate(hero2).then(delay(0.1)).then(fadeTo(1, 1)),
+      animate(hero3).then(delay(0.3)).then(fadeTo(1, 1))
+    );
+  })
+  .then(waitForIt)
+  .then(function() {
+    return deferred(
+      animate(speech1).then(delay(0.1)).then(showSpeech(speech1, 14)),
+      animate(speech2).then(delay(0.3)).then(showSpeech(speech2, 15)),
+      animate(speech3).then(delay(0.6)).then(showSpeech(speech3, 16)),
+      animate(speech4).then(delay(1)).then(showSpeech(speech4, 17))
+    );
+  })
+  .then(waitForIt)
+  .then(function() {
+    var anim1 = animate(hero1)
+      .then(moveTo(14, 6, 1))
+      .then(toggleDoor(door1))
+      .then(moveTo(4, 6, 1))
+      .then(moveTo(4, 5, 0.3))
+      .then(toggleChest(chest1))
+      .then(delay(3))
+      .then(toggleChest(chest1))
+      .then(moveTo(4, 6, 0.3))
+      .then(moveTo(14, 6, 1))
+      .then(toggleDoor(door1))
+      .then(delay(1))
+      .then(moveTo(14, 8, 0.6))
+      .then(moveTo(17, 8, 0.6))
+      .then(moveTo(17, 6, 0.6))
+      .then(toggleDoor(door4))
+      .then(moveTo(7, 6, 1))
+      .then(moveTo(7, 5, 0.3))
+      .then(toggleChest(chest4))
+      .then(delay(3))
+      .then(toggleChest(chest4))
+      .then(moveTo(7, 6, 0.3))
+      .then(moveTo(17, 6, 1))
+      .then(toggleDoor(door4))
+      .then(moveTo(5, 6, 1))
+      ;
+
+    var anim2 = animate(hero2)
+      .then(moveTo(15, 7, 1))
+      .then(moveTo(15, 6, 0.6))
+      .then(toggleDoor(door2))
+      .then(moveTo(15, 7, 0.6))
+      .then(moveTo(5, 7, 1))
+      .then(moveTo(5, 5, 0.6))
+      .then(toggleChest(chest2))
+      .then(delay(3))
+      .then(toggleChest(chest2))
+      .then(moveTo(5, 7, 0.6))
+      .then(moveTo(15, 7, 1))
+      .then(moveTo(15, 6, 0.3))
+      .then(toggleDoor(door2))
+      .then(moveTo(15, 7, 0.3))
+      .then(moveTo(6, 7, 1));
+
+    var anim3 = animate(hero3)
+      .then(moveTo(4, 8, 0.3))
+      .then(moveTo(16, 8, 1))
+      .then(moveTo(16, 6, 0.6))
+      .then(toggleDoor(door3))
+      .then(moveTo(16, 8, 0.6))
+      .then(moveTo(6, 8, 1))
+      .then(moveTo(6, 5, 0.6))
+      .then(toggleChest(chest3))
+      .then(delay(3))
+      .then(toggleChest(chest3))
+      .then(moveTo(6, 8, 0.6))
+      .then(moveTo(16, 8, 1))
+      .then(moveTo(16, 6, 0.6))
+      .then(toggleDoor(door3))
+      .then(moveTo(16, 8, 0.6))
+      .then(moveTo(4, 8, 1))
+      .then(moveTo(4, 7, 0.6));
+
+    return deferred(anim1, anim2, anim3);
+  })
+  .done();
+  						</code></pre>
+					</section>
+					<section>
+						<h2>Promises = Eventual Monad</h2>
+						<p>Promises are rooted in functional programming.  The better you understand functional programming, the better you will be able to leverage promises</p>
+					</section>
+				</section>
+				<section>
+				<section>
+						<h2>Now that I've blown your mind</h2>
+						<p>Let's look at other nice things Promises can do</p>
+						<img src="http://i.imgur.com/tFWVw4e.gif" class="stretch" />
+					</section>
+					<section>
+						<h2>Catch / Finally</h2>
+						<pre><code data-trim class="js">
+button.text('Loading').disable();
+webService.getData()
+  .then(function(result) {
+    // Do something useful
+  })
+  .catch(function (err) {
+    // Show an error message
+  })
+  .finally(function() {
+    // This is always called, regardless.
+    button.text('Submit').enable();
+  });
+						</code></pre>
+					</section>
+					<section>
+						<h2>Call Simultaneously</h2>
+						<pre><code data-trim class="js">
+deferred(getUser(), getLanguage(), getBent())
+  .then(function(user, language, bent) {
+    // Only runs when the promises from getUser, getLanguage, and getBent are resolved.
+  });
+						</code></pre>
+					</section>
+					<section>
+						<h2>Array functions</h2>
+						<pre><code data-trim class="js">
+function getData(id) {
+  // Returns some kind of promise
+  return webService.getData(id);
+}
+var idsToRead = [1, 2, 3, 5, 8, 13];
+var asPromise = deferred(idsToRead);
+asPromise
+  .map(getData)
+  .then(function(data) {
+    // Get an array of data after all the requests from the webservice have been resolved.
+    console.log(data); 
+  })
+  .catch(function (err) {
+    // If any individual request errors out
+    alert(err);
+  });
+						</code></pre>
+						<p><small>Also <code>Reduce</code> and <code>Some</code> are supported.</small></p>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h1>Let's Review</h1>
+				</section>
+
+				<section>
+					<ul>
+							<li>Promises are a common interface to asyncronous functions</li>
+							<li>This common interface allows libraries to manage much of the complexity of async (chaining, concurent work, error handling)</li>
+							<li>A good promise library will solve literally all your problems</li>
+					</ul>
+				</section>
+					<section>
+						<h1>Thanks</h1>
+						<p><small>Slides and library here: https://github.com/mrdrbob/promises-presentation</small></p>
+					</section>
+				</section>
+
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="lib/js/deferred.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'js/animations.js' },
+					{ src: 'js/game.js' }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
